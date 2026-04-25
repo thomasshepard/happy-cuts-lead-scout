@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HC Lead Scout</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+
+  <!-- 1. Header -->
+  <div class="header">
+    <div class="title-row">
+      <span class="title">HC Lead Scout</span>
+      <span class="status-dot" id="statusDot" title="Idle"></span>
+    </div>
+    <p class="system-note">Browser must remain open for scheduled scans.</p>
+  </div>
+
+  <!-- 2. Run Now -->
+  <div class="section">
+    <button class="btn-run" id="runNow">Run Now</button>
+  </div>
+
+  <!-- 3. Schedule selector -->
+  <div class="section row">
+    <label class="label" for="schedule">Schedule</label>
+    <select id="schedule">
+      <option value="0">Off</option>
+      <option value="120">Every 2 hours</option>
+      <option value="240">Every 4 hours</option>
+      <option value="360">Every 6 hours</option>
+    </select>
+  </div>
+
+  <!-- 4. Status bar -->
+  <div class="status-bar">
+    <span id="lastRunText">Last run: never</span>
+    <span id="runCountText">0 / 6 runs today</span>
+  </div>
+
+  <!-- 5. Recent leads -->
+  <div class="section">
+    <div class="label">Recent Leads</div>
+    <div id="leadsFeed">
+      <div class="no-leads">No leads found yet.</div>
+    </div>
+  </div>
+
+  <!-- 6. Settings (collapsed) -->
+  <details class="settings" id="settingsSection">
+    <summary>Settings</summary>
+    <div class="settings-body">
+      <label class="input-label" for="geminiKey">Gemini API Key</label>
+      <input type="password" id="geminiKey" placeholder="AIza…" autocomplete="off">
+
+      <label class="input-label" for="airtableKey">Airtable API Key</label>
+      <input type="password" id="airtableKey" placeholder="pat…" autocomplete="off">
+
+      <div class="settings-links">
+        <a id="linkFBGroups" href="#" target="_blank">Configure FB Groups in Airtable ↗</a>
+        <a id="linkRunLog"   href="#" target="_blank">View Run Log in Airtable ↗</a>
+      </div>
+    </div>
+  </details>
+
+  <!-- 7. Footer -->
+  <div class="footer">
+    <a id="linkLeads" href="#" target="_blank">View all leads in Airtable →</a>
+  </div>
+
+  <script type="module" src="popup.js"></script>
+</body>
+</html>
