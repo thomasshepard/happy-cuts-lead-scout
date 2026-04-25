@@ -32,6 +32,7 @@ const runCountEl   = document.getElementById('runCountText');
 const feedEl       = document.getElementById('leadsFeed');
 const geminiInput  = document.getElementById('geminiKey');
 const airtableInput = document.getElementById('airtableKey');
+const resetBtn     = document.getElementById('resetRunning');
 
 document.getElementById('linkLeads').href    = `${AT_BASE}/${TABLE_LEADS}`;
 document.getElementById('linkFBGroups').href = `${AT_BASE}/${TABLE_FB_GROUPS}`;
@@ -91,11 +92,22 @@ function escHtml(str) {
 
 async function loadState() {
   const capKey = getCentralDateKey();
-  const keys   = ['isRunning', 'lastRun', 'scheduleInterval', 'recentLeads',
+  const keys   = ['isRunning', 'lastRun', 'lastRunStart', 'scheduleInterval', 'recentLeads',
                   'geminiKey', 'airtableKey', capKey];
   const data   = await chrome.storage.local.get(keys);
 
-  renderStatus(data.isRunning || false);
+  // Auto-reset stale isRunning flag (service worker killed mid-scan, finally never ran)
+  let isRunning = data.isRunning || false;
+  if (isRunning && data.lastRunStart) {
+    const staleness = Date.now() - new Date(data.lastRunStart).getTime();
+    if (staleness > 600_000) {
+      isRunning = false;
+      await chrome.storage.local.set({ isRunning: false });
+    }
+  }
+
+  renderStatus(isRunning);
+  resetBtn.style.display = isRunning ? 'block' : 'none';
 
   lastRunEl.textContent   = `Last run: ${timeAgo(data.lastRun || null)}`;
   const count             = data[capKey] || 0;
@@ -145,15 +157,26 @@ function saveKey(storageKey, inputEl) {
 saveKey('geminiKey',   geminiInput);
 saveKey('airtableKey', airtableInput);
 
+resetBtn.addEventListener('click', async () => {
+  await chrome.storage.local.set({ isRunning: false });
+  await loadState();
+});
+
 // Poll for isRunning changes while popup is open (service worker updates storage)
 let pollInterval = null;
 
 function startPolling() {
   pollInterval = setInterval(async () => {
-    const { isRunning, recentLeads, lastRun } = await chrome.storage.local.get(
-      ['isRunning', 'recentLeads', 'lastRun']
+    const { isRunning: raw, lastRunStart, recentLeads, lastRun } = await chrome.storage.local.get(
+      ['isRunning', 'lastRunStart', 'recentLeads', 'lastRun']
     );
-    renderStatus(isRunning || false);
+    let isRunning = raw || false;
+    if (isRunning && lastRunStart && (Date.now() - new Date(lastRunStart).getTime()) > 600_000) {
+      isRunning = false;
+      await chrome.storage.local.set({ isRunning: false });
+    }
+    renderStatus(isRunning);
+    resetBtn.style.display = isRunning ? 'block' : 'none';
     lastRunEl.textContent = `Last run: ${timeAgo(lastRun || null)}`;
     renderLeads(recentLeads || []);
   }, 3000);

@@ -121,6 +121,13 @@ async function runScan(triggerType = 'Scheduled') {
   const runId      = `run_${now.toISOString().replace(/[-:.TZ]/g, '').slice(0, 15)}`;
   const startTime  = Date.now();
 
+  // Detect ghost runs: isRunning stuck true from a previously killed service worker
+  const { isRunning: alreadyRunning, lastRunStart: prevStart } =
+    await chrome.storage.local.get(['isRunning', 'lastRunStart']);
+  if (alreadyRunning && prevStart && (Date.now() - new Date(prevStart).getTime()) > 600_000) {
+    console.warn('[HC Lead Scout] Clearing ghost run from', prevStart);
+  }
+
   let groupsScanned    = 0;
   let postsSeen        = 0;
   let keywordMatches   = 0;

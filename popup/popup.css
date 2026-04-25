@@ -104,6 +104,20 @@ body {
   cursor: not-allowed;
 }
 
+.btn-reset {
+  width: 100%;
+  margin-top: 6px;
+  padding: 5px 0;
+  background: transparent;
+  color: #6b7280;
+  font-size: 11px;
+  border: 1px solid #374151;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-reset:hover { color: #e5e7eb; border-color: #6b7280; }
+
 /* ── Schedule selector ────────────────────────────────────────────────────── */
 select {
   background: #1f2937;
