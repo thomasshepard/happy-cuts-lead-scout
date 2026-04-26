@@ -200,7 +200,7 @@ async function runScan(triggerType = 'Scheduled') {
 
         // Only process posts newer than the last run for this group
         const newPosts = lastRun
-          ? rawPosts.filter(p => p.postedAt && new Date(p.postedAt) > new Date(lastRun))
+          ? rawPosts.filter(p => !p.postedAt || new Date(p.postedAt) > new Date(lastRun))
           : rawPosts;
 
         postsSeen += newPosts.length;
