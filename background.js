@@ -36,6 +36,25 @@ async function incrementDailyCount() {
   await chrome.storage.local.set({ [key]: (data[key] || 0) + 1 });
 }
 
+// ── Service worker keepalive ──────────────────────────────────────────────────
+// MV3 workers are killed after ~30s of perceived inactivity. Polling storage
+// every 20s keeps the worker alive during long async waits (tab loads, etc.).
+
+let _keepaliveTimer = null;
+
+function startKeepalive() {
+  _keepaliveTimer = setInterval(() => {
+    chrome.storage.local.get('isRunning').catch(() => {});
+  }, 20_000);
+}
+
+function stopKeepalive() {
+  if (_keepaliveTimer !== null) {
+    clearInterval(_keepaliveTimer);
+    _keepaliveTimer = null;
+  }
+}
+
 // ── Utilities ─────────────────────────────────────────────────────────────────
 
 function randomDelay() {
@@ -121,10 +140,15 @@ async function runScan(triggerType = 'Scheduled') {
   const runId      = `run_${now.toISOString().replace(/[-:.TZ]/g, '').slice(0, 15)}`;
   const startTime  = Date.now();
 
-  // Detect ghost runs: isRunning stuck true from a previously killed service worker
+  // Guard against double-starts and detect ghost runs
   const { isRunning: alreadyRunning, lastRunStart: prevStart } =
     await chrome.storage.local.get(['isRunning', 'lastRunStart']);
-  if (alreadyRunning && prevStart && (Date.now() - new Date(prevStart).getTime()) > 600_000) {
+  if (alreadyRunning && prevStart) {
+    const age = Date.now() - new Date(prevStart).getTime();
+    if (age < 600_000) {
+      console.warn('[HC Lead Scout] Run already in progress (started', prevStart + '), bailing out.');
+      return;
+    }
     console.warn('[HC Lead Scout] Clearing ghost run from', prevStart);
   }
 
@@ -138,6 +162,8 @@ async function runScan(triggerType = 'Scheduled') {
   const allKeywords    = new Set();
 
   await chrome.storage.local.set({ isRunning: true, lastRunStart: now.toISOString() });
+
+  startKeepalive();
 
   try {
     // Enforce daily cap for scheduled runs only
@@ -239,6 +265,7 @@ async function runScan(triggerType = 'Scheduled') {
   } catch (err) {
     errors.push(err.message);
   } finally {
+    stopKeepalive();
     const duration = Math.round((Date.now() - startTime) / 1000);
     const status   = errors.length === 0 ? 'Success' : (leadsLogged > 0 ? 'Partial' : 'Error');
 
