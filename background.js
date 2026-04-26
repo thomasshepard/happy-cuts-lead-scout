@@ -4,7 +4,7 @@ import { scorePostsBatch } from './lib/gemini.js';
 
 const AIRTABLE_BASE_ID = 'appZOi48qf8SzyOml';
 const ALARM_NAME       = 'hc-lead-scout-run';
-const MAX_DAILY_RUNS   = 6;
+const MAX_DAILY_RUNS   = 12;
 const GROUP_DELAY_MIN  = 30_000;  // 30 s
 const GROUP_DELAY_MAX  = 90_000;  // 90 s
 const TAB_LOAD_TIMEOUT = 60_000;  // 60 s
